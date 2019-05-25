@@ -1,0 +1,179 @@
+<?xml version="1.0"?>
+
+<st-source>
+<!-- 
+Name: JSONWebTokensTests
+Notice: Licensed under the MIT license
+
+Copyright (c) 2017 intelligent views GmbH
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+Comment: JSON Web Tokens Implementation
+See https://jwt.io/
+
+Contact: hkleinsorgen - at - i-views.com
+Github repo: https://github.com/hkleinsorgen/VW-JWT
+
+Licensed under the MIT license (see Copyright)
+DevelopmentPrerequisites: #(#(#any 'JSONWebTokens' '') #(#any 'Xtreams-Crypto' '') #(#any 'SUnit' ''))
+KSignature: #('definedClasses' 2 'definedClassesHash' 4295745384 'extendedClasses' 0 'extendedClassesHash' 0)
+KSignatureV2: #('definedClasses' 2 'definedClassesHash' 878074854445345163866401279287717524442604523236 'extendedClasses' 0 'extendedClassesHash' 1245845410931227995499360226027473197403882391305)
+PackageName: JSONWebTokensTests
+Parcel: #('JSONWebTokensTests')
+ParcelDirectory: JSONWebTokensTests
+PrerequisiteDescriptions: #(#(#name 'JSONWebTokens' #componentType #package) #(#name 'Xtreams-Crypto' #componentType #package) #(#name 'SUnit' #componentType #package))
+PrerequisiteParcels: #(#('JSONWebTokens' '') #('Xtreams-Crypto' '') #('SUnit' ''))
+Version: (8.1).5
+Date: 3:51:07 PM May 25, 2019
+ -->
+<time-stamp>From VisualWorks®, 8.3.2 of 16. November 2018 on 25. Mai 2019 at 15:51:07</time-stamp>
+
+
+<do-it>(Dialog confirm: 'You are filing-in a Parcel source file!\\While this is possible it will not have\the same effect as loading the parcel.\None of the Parcel''s prerequisites will\be loaded and none of its load actions\will be performed.\\Are you sure you want to file-in?' withCRs) ifFalse: [self error: 'Parcel file-in abandoned.  Choose terminate or close.']</do-it>
+
+<class>
+<name>SignTest</name>
+<environment>JWT</environment>
+<super>XProgramming.SUnit.TestCase</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars></inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category></category>
+<attributes>
+<package>JSONWebTokensTests</package>
+</attributes>
+</class>
+
+<class>
+<name>EncodingTest</name>
+<environment>JWT</environment>
+<super>XProgramming.SUnit.TestCase</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars></inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category></category>
+<attributes>
+<package>JSONWebTokensTests</package>
+</attributes>
+</class>
+
+<methods>
+<class-id>JWT.SignTest</class-id> <category>tests</category>
+
+<body package="JSONWebTokensTests">testExpired	| key payload encodedToken |	key := self symmetricKey256.	payload := Dictionary new.	payload at: Token keyExpiry put: ( Timestamp nowUTC - 1 seconds ) jwtValue.	encodedToken := ( Token payload: payload ) signWithKey: key.	[	( Token fromEncodedToken: encodedToken ) verifyWithKey: key.		self signalFailure: 'Expiry failure expected'	] on: TokenError do: [: ex | self assert: ( '*expir*' match: ex description )].</body>
+
+<body package="JSONWebTokensTests">testInvalidTokenSyntax	#(		'thisisnotatoken'		'this.is~not.a~token'		'this.isnotatoken'	) do: [ : string |		[	Token fromEncodedToken: string.			self signalFailure: ('Token error expected for "&lt;1s&gt;"' expandMacrosWith: string )		] on: TokenError do: [: ex | ].	]</body>
+
+<body package="JSONWebTokensTests">testNotExpired	| key payload encodedToken |	key := self symmetricKey256.	payload := Dictionary new.	payload at: Token keyExpiry put: ( Timestamp nowUTC + 2 seconds ) jwtValue.	encodedToken := ( Token payload: payload ) signWithKey: key.	( Token fromEncodedToken: encodedToken ) verifyWithKey: key.</body>
+
+<body package="JSONWebTokensTests">testSignHS256	self privateTestSignSymmetric: 'HS256' expected: self defaultTokenHS256.</body>
+
+<body package="JSONWebTokensTests">testSignHS384	self privateTestSignSymmetric: 'HS384' key: self symmetricKey384 expected: self defaultTokenHS384.</body>
+
+<body package="JSONWebTokensTests">testSignHS512	self privateTestSignSymmetric: 'HS512' expected: self defaultTokenHS512.</body>
+
+<body package="JSONWebTokensTests">testSignRS256	self privateTestSignRSA: 'RS256' expected: self defaultTokenRS256</body>
+
+<body package="JSONWebTokensTests">testSignRS384	self privateTestSignRSA: 'RS384' expected: self defaultTokenRS384</body>
+
+<body package="JSONWebTokensTests">testSignRS512	self privateTestSignRSA: 'RS512' expected: self defaultTokenRS512</body>
+
+<body package="JSONWebTokensTests">testValidTokenSyntax	#(		'header.playload.signature'	) do: [ : encodedToken |		[	Token fromEncodedToken: encodedToken.					] on: TokenError do: [: ex | 			self signalFailure: ('Token error "&lt;1s&gt; for "&lt;2s&gt;" not expected' expandMacrosWith: ex description with: encodedToken )		].	]</body>
+
+<body package="JSONWebTokensTests">testVerifyFail	| key |	key := #[102 138 107 68 133 17 249 74 251 241 124 13 163 153 201 230 124 82 67 161 214 83 172 119 84 113 74 38 229 14 244 205].	#(		'header.playload.signature'		'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYW1lIjoidGVzdGVyIn0.LaZfDt2tuvyLFBDWo3PIMt4qrgAF9i0h6otk3rpyvjI'	) do: 		[: encodedToken | | token |			token := Token fromEncodedToken: encodedToken.			[	token verifyWithKey: key.				self signalFailure: 'Verification failure expected'			] on: TokenError do: [: ex | ]		].</body>
+
+<body package="JSONWebTokensTests">testVerifyFailHS256	| token |	token := Token fromEncodedToken: self defaultTokenHS256.	self assert: token payload = self defaultPayload.	self assert: token header = ( self headerForAlg: 'HS256' ).	( Array with: #[ ] with: ( Xtreams.SecureRandom reading read: 32 )) do: 		[: wrongKey |						[	token verifyWithKey: #[ ].				self signalFailure: 'Verification failure expected'			] on: TokenError do: [: ex | ]		].</body>
+
+<body package="JSONWebTokensTests">testVerifyHS256	self privateVerifySymmetricToken: self defaultTokenHS256 algorithm: 'HS256'</body>
+
+<body package="JSONWebTokensTests">testVerifyHS384	self privateVerifySymmetricToken: self defaultTokenHS384 key: self symmetricKey384  algorithm: 'HS384'</body>
+
+<body package="JSONWebTokensTests">testVerifyHS512	self privateVerifySymmetricToken: self defaultTokenHS512 algorithm: 'HS512'</body>
+
+<body package="JSONWebTokensTests">testVerifyRS256	self privateVerifyRSAToken: self defaultTokenRS256 algorithm: 'RS256'</body>
+
+<body package="JSONWebTokensTests">testVerifyRS384	self privateVerifyRSAToken: self defaultTokenRS384 algorithm: 'RS384'</body>
+
+<body package="JSONWebTokensTests">testVerifyRS512	self privateVerifyRSAToken: self defaultTokenRS512 algorithm: 'RS512'</body>
+</methods>
+
+<methods>
+<class-id>JWT.SignTest</class-id> <category>private</category>
+
+<body package="JSONWebTokensTests">headerForAlg: alg	^ '{"alg":"', alg, '","typ":"JWT"}'</body>
+
+<body package="JSONWebTokensTests">privateTestSignRSA: algorithm expected: expectedToken 	| payload encodedToken |	payload := self defaultPayload.	encodedToken := ( Token payload: payload ) signWithKey: self privateRSAKey algorithm: algorithm.	"self assert: encodedToken = expectedToken ."	( Token fromEncodedToken: encodedToken ) verifyWithKey: self publicRSACert algorithm: algorithm.</body>
+
+<body package="JSONWebTokensTests">privateTestSignSymmetric: algorithm expected: expectedToken 	self privateTestSignSymmetric: algorithm key: self symmetricKey256 expected: expectedToken</body>
+
+<body package="JSONWebTokensTests">privateTestSignSymmetric: algorithm key: key expected: expectedToken 	| payload encodedToken |	payload := self defaultPayload.	encodedToken := ( Token payload: payload ) signWithKey: key algorithm: algorithm.	self assert: encodedToken = expectedToken .	( Token fromEncodedToken: encodedToken ) verifyWithKey: key algorithm: algorithm.</body>
+
+<body package="JSONWebTokensTests">privateVerifyRSAToken: encodedToken algorithm: algorithm	| token |	token := Token fromEncodedToken: encodedToken.	self assert: token payload = self defaultPayload.	self assert: token header = ( self headerForAlg: algorithm ).	token verifyWithKey: self publicRSACert algorithm: algorithm.</body>
+
+<body package="JSONWebTokensTests">privateVerifySymmetricToken: encodedToken algorithm: algorithm	self privateVerifySymmetricToken: encodedToken key: self symmetricKey256  algorithm: algorithm</body>
+
+<body package="JSONWebTokensTests">privateVerifySymmetricToken: encodedToken key: key algorithm: algorithm	| token |	token := Token fromEncodedToken: encodedToken.	self assert: token payload = self defaultPayload.	self assert: token header = ( self headerForAlg: algorithm ).	token verifyWithKey: key algorithm: algorithm.</body>
+</methods>
+
+<methods>
+<class-id>JWT.SignTest</class-id> <category>constants</category>
+
+<body package="JSONWebTokensTests">defaultPayload	^ '{"test":"passed","http://www.i-views.com/jwt/isAdmin":true}'</body>
+
+<body package="JSONWebTokensTests">defaultTokenHS256	" verified with the online debgugger https://jwt.io/#debugger-io  "	^ 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoicGFzc2VkIiwiaHR0cDovL3d3dy5pLXZpZXdzLmNvbS9qd3QvaXNBZG1pbiI6dHJ1ZX0.H59s71fM0V_1w10x4ruw2XhpyMQWdoWn0ewJgYRwwrg'</body>
+
+<body package="JSONWebTokensTests">defaultTokenHS384	" verified with the online debgugger https://jwt.io/#debugger-io  "	^ 'eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoicGFzc2VkIiwiaHR0cDovL3d3dy5pLXZpZXdzLmNvbS9qd3QvaXNBZG1pbiI6dHJ1ZX0.78U3QHKmi4Wge7QGFs1nyGa-uBkEnBTBlDaVAYHYJD5ZBCr2-Cy1UMoSBg1xB1mI'</body>
+
+<body package="JSONWebTokensTests">defaultTokenHS512	" verified with the online debgugger https://jwt.io/#debugger-io  "	^ 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoicGFzc2VkIiwiaHR0cDovL3d3dy5pLXZpZXdzLmNvbS9qd3QvaXNBZG1pbiI6dHJ1ZX0.R8_0H-dpu2lcSGDM35XRfT9oHvCAJBcL4SkX4MxCNfKAHORYK3PRocXnEfx5pUmv9wu9n1uUslKfAMq-CfoSVw'</body>
+
+<body package="JSONWebTokensTests">defaultTokenRS256	" verified with the online debgugger https://jwt.io/#debugger-io  "	^ 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoicGFzc2VkIiwiaHR0cDovL3d3dy5pLXZpZXdzLmNvbS9qd3QvaXNBZG1pbiI6dHJ1ZX0.wSgBOGB9j9n9FoyRYwkUCNT7yFUbFWNr8mcBn9dQwVtkIzR4uzju_i6_wjRXlJqVK0EYjHBoq2aEYXW23f9bnzXHUKcVBtkmQkYBDK0f23mOFePhy2t2NlUnN5NrZseVIFezuLb7gpz2LzR_Va83OrHvCl9t01Y4dbxCqYlz5bk'</body>
+
+<body package="JSONWebTokensTests">defaultTokenRS384	" verified with the online debgugger https://jwt.io/#debugger-io  "	^ 'eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoicGFzc2VkIiwiaHR0cDovL3d3dy5pLXZpZXdzLmNvbS9qd3QvaXNBZG1pbiI6dHJ1ZX0.IkyWJftyvyVZcAVgplgJ63rlBIuFIbKiENq46u_XPQRdByeYBOGcGlqaXbXuLK8d2x008Q0UisEsDwV5g-b-li_8utiM-NkEyVlX-yANuuCMnqvI70TL36kYpnH4-awoCiyonclgN4zRL302Du_8TSoJrnVkLcSqtIePIWUMTAU'</body>
+
+<body package="JSONWebTokensTests">defaultTokenRS512	" verified with the online debgugger https://jwt.io/#debugger-io  "	^ 'eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJ0ZXN0IjoicGFzc2VkIiwiaHR0cDovL3d3dy5pLXZpZXdzLmNvbS9qd3QvaXNBZG1pbiI6dHJ1ZX0.dqFAl_1jvoS_wuw0rMqS1H-6bEwXjrobU8kVDLr2HQHm4wZdqjNpaUUoUyYMfxcg3YzPnMoaznQarKyr0Hbtyt6G3vmx4YTvJlcTT0M-eiMvtllc4fKwZ4eCCBBuKeyU-kF5MrlrB9GVID8OcsyZy4ztSVqr5yYQQjkXsxJ4bv0'</body>
+
+<body package="JSONWebTokensTests">privateRSAKey	^ '-----BEGIN RSA PRIVATE KEY-----MIICXQIBAAKBgQDW9TNL7DcAXGkM6UvZEaf+77k6b3MkCu8L4Ss5cvU/Zjg/Cqq4CfScEBK0ZqFlTndg0JD0fqQaCB9bH8DvNaI5mooibgx+Wdb4OVd/16HTxUC5x3XlaurD6vn0sDmWwJKKDMMouJCLg3OEQriyB5Cjls4yt2anR0ZfkSDBO0oehQIDAQABAoGADeuLCtudJDTXyLJC6yetjWDQyev1tNvQZyCJwAqlvxlLgymZrJlYcdLIo04SHZFbQbW/7VVWIylrfmcsA1Gh06K+AsxuFJrCh/mzc4AvftdIKdMTXg5pmzsm+CUPB2qBuK/D3X2qSs/F8OmXCMVKetHsWPxVR0WUkP3Hc8v9LAECQQDwhz9xclHhlfCbZEMBhE7xTqI5IQilLhBw//xi1Izz6jkEp0qnPOTtmtuhovO79ucEWSwgoUBvZszRB3yIBnfBAkEA5Mji1ujE6L5U0CvdyxOvXgTYYtQw31VVVK+ykffzRIGE0U36clXLIrWhqQzqMGGC4aXUmkD2O8YVYjacE/W3xQJAAiaTcKY/CS9YCWuqFbdjJVE4rh4Xf7Kbvwbq8M9Ju1yayendBwXKXj2GPTnByCp7AlTxyhDnDJf0uOHCQU0dgQJBANzzecfuA4V3k7d8NfaTa1EUwtonbY+y/PcNvBqm6SUnJNtzQMW9P7Kk0ZzPITlaYymDmyDiTiwKMMqqTPAl5bUCQQDZXESEDbjeQQOBez7+5gLwbh/t79E9smmtFaNkqLI/A7WgTkRnJ5YV4N50mncvQZBJBdZtQKH9bYc0uAGZDRch-----END RSA PRIVATE KEY-----'</body>
+
+<body package="JSONWebTokensTests">publicRSACert	^ '-----BEGIN CERTIFICATE-----MIICFjCCAX8CAQIwDQYJKoZIhvcNAQEEBQAwYDEPMA0GA1UEChMGaXZpZXdzMRMwEQYDVQQHEwpNZXRyb3BvbGlzMREwDwYDVQQIEwhOZXcgWW9yazELMAkGA1UEBhMCVVMxGDAWBgNVBAMTD3Rlc3QuaS12aWV3cy5kZTAeFw0xMjA0MDYwODA5MDNaFw0yMjA0MDQwODA5MDNaMCsxDzANBgNVBAoTBml2aWV3czEYMBYGA1UEAxMPdGVzdC5pLXZpZXdzLmRlMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDW9TNL7DcAXGkM6UvZEaf+77k6b3MkCu8L4Ss5cvU/Zjg/Cqq4CfScEBK0ZqFlTndg0JD0fqQaCB9bH8DvNaI5mooibgx+Wdb4OVd/16HTxUC5x3XlaurD6vn0sDmWwJKKDMMouJCLg3OEQriyB5Cjls4yt2anR0ZfkSDBO0oehQIDAQABoxowGDAJBgNVHRMEAjAAMAsGA1UdDwQEAwIF4DANBgkqhkiG9w0BAQQFAAOBgQAF5IxJOa/J+QVRESFxofTO+cPfE/Tzd3BuC8eTrnt650y+JEHzXMVAAdXc4TEUZ9YwVBx94r2k710VXSg21+GCmVjArKUlgtjAYwRB4bSYdT5IsLx0Q1+e+QKvv13YCZaYt9GRgMocB9Qd/qlpthQmipVLucgLsz5ta0MRpg0x7g==-----END CERTIFICATE-----'</body>
+
+<body package="JSONWebTokensTests">symmetricKey256	^ 'S5feBjkrGkDhY-xSfdcS19ANQWHh9wIfKu5-2hKD9BI'</body>
+
+<body package="JSONWebTokensTests">symmetricKey384	^ 'nWZCqmP_ts0E-FLqKxmdV3vBMT0cowpcCiOLViuASeI0L6mVAB7O0wFKcF8Ak99t'</body>
+</methods>
+
+<methods>
+<class-id>JWT.EncodingTest</class-id> <category>tests</category>
+
+<body package="JSONWebTokensTests">testEncoding	| string encoded decoded |	string := '{		"test": "passed"	}'.	encoded := (Token encodeString: string).	self assert: encoded ~= string.	decoded := Token decodeAsString: encoded.	self assert: decoded = string.</body>
+
+<body package="JSONWebTokensTests">testEncodingRandom	| random stream string encoded decoded |	random := Random fromGenerator: 1 seededWith: 17.	10 timesRepeat: 		[	stream := String new writeStream.			100 timesRepeat: 				[	stream nextPut: ( Character codePoint: ( random next * 512 ) ceiling )				].			string := stream contents.			encoded := Token encodeString: string.			self assert: encoded ~= string.			self deny: encoded last = $=.			self deny: (encoded includes: $/).			self deny: (encoded includes: $+).			decoded := Token decodeAsString: encoded.			self assert: decoded = string		].</body>
+</methods>
+
+<do-it>"Imported Classes:"</do-it>
+
+<do-it>self error: 'Attempting to file-in parcel imports.  Choose terminate or close'</do-it>
+
+<class>
+<name>TestCase</name>
+<environment>XProgramming.SUnit</environment>
+<super>XProgramming.SUnit.TestAsserter</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars>assertCounter testSelector </inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category>SUnit</category>
+<attributes>
+<package>SUnit</package>
+</attributes>
+</class>
+
+</st-source>
