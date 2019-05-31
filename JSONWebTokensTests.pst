@@ -20,17 +20,16 @@ Github repo: https://github.com/hkleinsorgen/VW-JWT
 
 Licensed under the MIT license (see Copyright)
 DevelopmentPrerequisites: #(#(#any 'JSONWebTokens' '') #(#any 'Xtreams-Crypto' '') #(#any 'SUnit' ''))
-KSignature: #('definedClasses' 2 'definedClassesHash' 4295745384 'extendedClasses' 0 'extendedClassesHash' 0)
-KSignatureV2: #('definedClasses' 2 'definedClassesHash' 878074854445345163866401279287717524442604523236 'extendedClasses' 0 'extendedClassesHash' 1245845410931227995499360226027473197403882391305)
+KSignature: #('definedClasses' 2 'definedClassesHash' 4662559715 'extendedClasses' 0 'extendedClassesHash' 0)
+KSignatureV2: #('definedClasses' 2 'definedClassesHash' 1335741211468654091031744771215864424028166070156 'extendedClasses' 0 'extendedClassesHash' 1245845410931227995499360226027473197403882391305)
 PackageName: JSONWebTokensTests
-Parcel: #('JSONWebTokensTests')
-ParcelDirectory: JSONWebTokensTests
+Parcel: #($s "16r0073")
 PrerequisiteDescriptions: #(#(#name 'JSONWebTokens' #componentType #package) #(#name 'Xtreams-Crypto' #componentType #package) #(#name 'SUnit' #componentType #package))
 PrerequisiteParcels: #(#('JSONWebTokens' '') #('Xtreams-Crypto' '') #('SUnit' ''))
-Version: (8.1).5
-Date: 3:51:07 PM May 25, 2019
+Version: (8.1).6
+Date: 6:15:04 PM May 31, 2019
  -->
-<time-stamp>From VisualWorks®, 8.3.2 of 16. November 2018 on 25. Mai 2019 at 15:51:07</time-stamp>
+<time-stamp>From VisualWorks®, 8.3.2 of 16. November 2018 on 31. Mai 2019 at 18:15:04</time-stamp>
 
 
 <do-it>(Dialog confirm: 'You are filing-in a Parcel source file!\\While this is possible it will not have\the same effect as loading the parcel.\None of the Parcel''s prerequisites will\be loaded and none of its load actions\will be performed.\\Are you sure you want to file-in?' withCRs) ifFalse: [self error: 'Parcel file-in abandoned.  Choose terminate or close.']</do-it>
@@ -66,6 +65,12 @@ Date: 3:51:07 PM May 25, 2019
 </class>
 
 <methods>
+<class-id>JWT.SignTest</class-id> <category>private</category>
+
+<body package="JSONWebTokensTests">privateVerifyRSAToken: encodedToken algorithm: algorithm	| token |	token := Token fromEncodedToken: encodedToken.	self assert: token payload = self defaultPayload.	self assert: token header = ( self headerForAlg: algorithm ).	token verifyWithKey: self publicRSACert algorithm: algorithm.</body>
+</methods>
+
+<methods>
 <class-id>JWT.SignTest</class-id> <category>tests</category>
 
 <body package="JSONWebTokensTests">testExpired	| key payload encodedToken |	key := self symmetricKey256.	payload := Dictionary new.	payload at: Token keyExpiry put: ( Timestamp nowUTC - 1 seconds ) jwtValue.	encodedToken := ( Token payload: payload ) signWithKey: key.	[	( Token fromEncodedToken: encodedToken ) verifyWithKey: key.		self signalFailure: 'Expiry failure expected'	] on: TokenError do: [: ex | self assert: ( '*expir*' match: ex description )].</body>
@@ -73,6 +78,12 @@ Date: 3:51:07 PM May 25, 2019
 <body package="JSONWebTokensTests">testInvalidTokenSyntax	#(		'thisisnotatoken'		'this.is~not.a~token'		'this.isnotatoken'	) do: [ : string |		[	Token fromEncodedToken: string.			self signalFailure: ('Token error expected for "&lt;1s&gt;"' expandMacrosWith: string )		] on: TokenError do: [: ex | ].	]</body>
 
 <body package="JSONWebTokensTests">testNotExpired	| key payload encodedToken |	key := self symmetricKey256.	payload := Dictionary new.	payload at: Token keyExpiry put: ( Timestamp nowUTC + 2 seconds ) jwtValue.	encodedToken := ( Token payload: payload ) signWithKey: key.	( Token fromEncodedToken: encodedToken ) verifyWithKey: key.</body>
+
+<body package="JSONWebTokensTests">testPayloadGet	| token |	token := Token new.	token payloadAt: 'testClaim' put: 'testValue'.	self assert: (token payloadAt: 'testClaim' ifAbsent: [ nil ]) = 'testValue'.	self assert: (token payloadAt: #testClaim ifAbsent: [ nil ]) = 'testValue'.</body>
+
+<body package="JSONWebTokensTests">testPayloadImmutable	| token |	token := Token new.	[	token payloadObject at: 'testClaim' put: 'dirtyWrite'.		self signalFailure: 'Payload object should be immutable'	] on: NoModificationError do: [: ex |  ].</body>
+
+<body package="JSONWebTokensTests">testPayloadModify	| token |	token := Token new.	token payloadAt: 'testClaim' put: 'testValue'.	self assert: token payload = '{"testClaim":"testValue"}'.	token payloadAt: 'testClaim' put: 'modifiedValue'.	self assert: token payload = '{"testClaim":"modifiedValue"}'.</body>
 
 <body package="JSONWebTokensTests">testSignHS256	self privateTestSignSymmetric: 'HS256' expected: self defaultTokenHS256.</body>
 
@@ -115,8 +126,6 @@ Date: 3:51:07 PM May 25, 2019
 <body package="JSONWebTokensTests">privateTestSignSymmetric: algorithm expected: expectedToken 	self privateTestSignSymmetric: algorithm key: self symmetricKey256 expected: expectedToken</body>
 
 <body package="JSONWebTokensTests">privateTestSignSymmetric: algorithm key: key expected: expectedToken 	| payload encodedToken |	payload := self defaultPayload.	encodedToken := ( Token payload: payload ) signWithKey: key algorithm: algorithm.	self assert: encodedToken = expectedToken .	( Token fromEncodedToken: encodedToken ) verifyWithKey: key algorithm: algorithm.</body>
-
-<body package="JSONWebTokensTests">privateVerifyRSAToken: encodedToken algorithm: algorithm	| token |	token := Token fromEncodedToken: encodedToken.	self assert: token payload = self defaultPayload.	self assert: token header = ( self headerForAlg: algorithm ).	token verifyWithKey: self publicRSACert algorithm: algorithm.</body>
 
 <body package="JSONWebTokensTests">privateVerifySymmetricToken: encodedToken algorithm: algorithm	self privateVerifySymmetricToken: encodedToken key: self symmetricKey256  algorithm: algorithm</body>
 
