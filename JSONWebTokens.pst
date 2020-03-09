@@ -19,17 +19,19 @@ Contact: hkleinsorgen - at - i-views.com
 Github repo: https://github.com/hkleinsorgen/VW-JWT
 
 Licensed under the MIT license (see Copyright)
-DevelopmentPrerequisites: #(#(#any 'Xtreams-Crypto' '') #(#any 'IV-HTTP-Extensions' '') #(#any 'JSON-Squeak' '') #(#any 'HTTP' ''))
-KSignature: #('definedClasses' 3 'definedClassesHash' 7200866682 'extendedClasses' 4 'extendedClassesHash' 441602123)
-KSignatureV2: #('definedClasses' 3 'definedClassesHash' 23864735524750795256161740188174986177663215923 'extendedClasses' 4 'extendedClassesHash' 95131330803007388525577715222266352070195034961)
+DevelopmentPrerequisites: #(#(#any 'Xtreams-Crypto' '') #(#any 'HTTP' '') #(#any 'X509' '') #(#any 'Xtreams-Transforms' '') #(#any 'Cryptography-Support' ''))
+DisregardedPrerequisites: #()
+KSignature: #('definedClasses' 5 'definedClassesHash' 7315272917 'extendedClasses' 4 'extendedClassesHash' 441602123)
+KSignatureV2: #('definedClasses' 5 'definedClassesHash' 219083466590935538901276008928069595214368533151 'extendedClasses' 4 'extendedClassesHash' 95131330803007388525577715222266352070195034961)
 PackageName: JSONWebTokens
-Parcel: #($s "16r0073")
-PrerequisiteDescriptions: #(#(#name 'Xtreams-Crypto' #componentType #package) #(#name 'IV-HTTP-Extensions' #componentType #package) #(#name 'JSON-Squeak' #componentType #package) #(#name 'HTTP' #componentType #package))
-PrerequisiteParcels: #(#('Xtreams-Crypto' '') #('IV-HTTP-Extensions' '') #('JSON-Squeak' '') #('HTTP' ''))
-Version: (8.1).11
-Date: 6:15:04 PM May 31, 2019
+Parcel: #('JSONWebTokens')
+ParcelDirectory: JSONWebTokens
+PrerequisiteDescriptions: #(#(#name 'Xtreams-Crypto' #componentType #package) #(#name 'HTTP' #componentType #package) #(#name 'X509' #componentType #package) #(#name 'Xtreams-Transforms' #componentType #package) #(#name 'Cryptography-Support' #componentType #package))
+PrerequisiteParcels: #(#('Xtreams-Crypto' '') #('HTTP' '') #('X509' '') #('Xtreams-Transforms' '') #('Cryptography-Support' ''))
+Version: (8.3.1).13
+Date: 10:51:39 PM March 9, 2020
  -->
-<time-stamp>From VisualWorks®, 8.3.2 of 16. November 2018 on 31. Mai 2019 at 18:15:04</time-stamp>
+<time-stamp>From VisualWorks®, 8.3.2 of 16. November 2018 on 9. März 2020 at 22:51:39</time-stamp>
 
 
 <do-it>(Dialog confirm: 'You are filing-in a Parcel source file!\\While this is possible it will not have\the same effect as loading the parcel.\None of the Parcel''s prerequisites will\be loaded and none of its load actions\will be performed.\\Are you sure you want to file-in?' withCRs) ifFalse: [self error: 'Parcel file-in abandoned.  Choose terminate or close.']</do-it>
@@ -47,6 +49,21 @@ Date: 6:15:04 PM May 31, 2019
 <package>JSONWebTokens</package>
 </attributes>
 </name-space>
+
+<class>
+<name>JWTJson</name>
+<environment>JWT</environment>
+<super>Xtreams.JSON</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars></inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category></category>
+<attributes>
+<package>JSONWebTokens</package>
+</attributes>
+</class>
 
 <class>
 <name>TokenAuthentication</name>
@@ -82,6 +99,21 @@ Date: 6:15:04 PM May 31, 2019
 <name>TokenError</name>
 <environment>JWT</environment>
 <super>Core.Error</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars></inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category></category>
+<attributes>
+<package>JSONWebTokens</package>
+</attributes>
+</class>
+
+<class>
+<name>JWTJsonReadStream</name>
+<environment>JWT</environment>
+<super>Xtreams.JSONReadStream</super>
 <private>false</private>
 <indexed-type>none</indexed-type>
 <inst-vars></inst-vars>
@@ -132,11 +164,17 @@ Date: 6:15:04 PM May 31, 2019
 </methods>
 
 <methods>
+<class-id>JWT.JWTJson class</class-id> <category>private</category>
+
+<body package="JSONWebTokens">streamingUnmarshal: stream 	^ JWTJsonReadStream on: stream</body>
+</methods>
+
+<methods>
 <class-id>JWT.TokenAuthentication</class-id> <category>private</category>
 
 <body package="JSONWebTokens">key	^ self password</body>
 
-<body package="JSONWebTokens">payload	| data |	data := Dictionary new.	data at: 'subj' put: self username.	^ JSON.Json render: data</body>
+<body package="JSONWebTokens">payload	| data |	data := Dictionary new.	data at: 'subj' put: self username.	^ JWTJson encode: data</body>
 </methods>
 
 <methods>
@@ -148,9 +186,37 @@ Date: 6:15:04 PM May 31, 2019
 <methods>
 <class-id>JWT.TokenAuthentication class</class-id> <category>accessing</category>
 
-<body package="JSONWebTokens">authenticationDataFromField: authField	^ authField valueOfScheme: self scheme</body>
+<body package="JSONWebTokens">authenticationDataFromField: authField 	| s lowerScheme |	lowerScheme := self scheme asLowercase.	^ ( s := authField value select: [: each | each scheme asLowercase = lowerScheme ]) notEmpty 		ifTrue: [ s first data ]		ifFalse: [ nil ]</body>
 
 <body package="JSONWebTokens">scheme	^'Bearer'</body>
+</methods>
+
+<methods>
+<class-id>JWT.Token</class-id> <category>accessing</category>
+
+<body package="JSONWebTokens">header	^ header</body>
+
+<body package="JSONWebTokens">header: aStringOrObject 	header := aStringOrObject isCharacters 			ifTrue: [ aStringOrObject ]			ifFalse: [ JWTJson encode: aStringOrObject ].	headerObject := nil.</body>
+
+<body package="JSONWebTokens">headerAt: aKey ifAbsent: ifAbsentBlock	^ self headerObject at: aKey asString ifAbsent: ifAbsentBlock</body>
+
+<body package="JSONWebTokens">headerAt: aKey put: aValue	| modifiedObject |	modifiedObject := self headerObject copy.	modifiedObject at: aKey asString put: aValue.	self header: modifiedObject</body>
+
+<body package="JSONWebTokens">headerObject	^ headerObject ifNil: 		[	headerObject := self cacheObjectFromJson: self header		]</body>
+
+<body package="JSONWebTokens">payload	^ payload</body>
+
+<body package="JSONWebTokens">payload: aStringOrObject 	payload := aStringOrObject isCharacters 			ifTrue: [ aStringOrObject ]			ifFalse: [ JWTJson encode: aStringOrObject ].	payloadObject := nil.</body>
+
+<body package="JSONWebTokens">payloadAt: aKey ifAbsent: ifAbsentBlock	^ self payloadObject at: aKey asString ifAbsent: ifAbsentBlock</body>
+
+<body package="JSONWebTokens">payloadAt: aKey put: aValue	| modifiedObject |	modifiedObject := self payloadObject copy.	modifiedObject at: aKey asString put: aValue.	self payload: modifiedObject</body>
+
+<body package="JSONWebTokens">payloadObject	^ payloadObject ifNil: 		[	payloadObject := self cacheObjectFromJson: self payload		]</body>
+
+<body package="JSONWebTokens">signature	^ signature</body>
+
+<body package="JSONWebTokens">signature: aSignature 	signature := aSignature.</body>
 </methods>
 
 <methods>
@@ -162,9 +228,9 @@ Date: 6:15:04 PM May 31, 2019
 
 <body package="JSONWebTokens">hash: bytesToHash hashID: hashAlgorithmId 	| toSign |	toSign := self class encodeAsBytes: bytesToHash.	^ ( nil writing hashing: hashAlgorithmId asUppercase )		nextPutAll: toSign; close;		digest</body>
 
-<body package="JSONWebTokens">messageToSign	| encodedPayload encodedHeader |	encodedHeader := self class encodeString: self header.	encodedPayload := self class encodeString: self payload.	^ encodedHeader , '.' , encodedPayload</body>
+<body package="JSONWebTokens">messageToSign	| encodedPayload encodedHeader |	encodedHeader := self class encodeBase64String: self header.	encodedPayload := self class encodeBase64String: self payload.	^ encodedHeader , '.' , encodedPayload</body>
 
-<body package="JSONWebTokens">parseJson: json	^ [ JSON.Json readFrom: json readStream ] 		on: JSON.JsonSyntaxError		do: [: ex | TokenError raiseSignal: ex description ]</body>
+<body package="JSONWebTokens">parseJson: json	^ [ JWTJson decode: json  ] 		on: Error		do: [: ex | TokenError raiseSignal: ex description ]</body>
 
 <body package="JSONWebTokens">raiseInvalidSignature	TokenError raiseSignal: 'Invalid token signature'.</body>
 
@@ -178,7 +244,7 @@ Date: 6:15:04 PM May 31, 2019
 
 <body package="JSONWebTokens">sign: toSign privateKey: privateKeyString hash: hashID padding: paddingName 	" Sign with the private key using the TLS algorithm selector "	| privateKey hashBytes  |	privateKey := self readKeyFrom: privateKeyString.	hashBytes := self hash: toSign hashID: hashID.	^ [ privateKey jwtSign: hashBytes hash: hashID padding: paddingName ] 		on: Error		do: [: ex | TokenError raiseSignal: 'Signing failed: ' , ex description ]</body>
 
-<body package="JSONWebTokens">sign: toSign secretKey: secretKey hash: vwHashName	" Sign with the secret key  using the hash algorithm (VW name, not JWT name!) "	| keyBytes hash |	keyBytes := secretKey isCharacters 			ifTrue: [ self class decodeAsBytes: secretKey ]			ifFalse: [ secretKey ].	keyBytes size &lt; 32 		ifTrue: [ TokenError raiseSignal: 'Invalid key size, minimum size is 256 bits' ].	hash := Xtreams.Hash algorithm: vwHashName key: keyBytes.	hash updateFrom: ( self class encodeAsBytes: toSign ).	^ hash finish</body>
+<body package="JSONWebTokens">sign: toSign secretKey: secretKey hash: vwHashName	" Sign with the secret key  using the hash algorithm (VW name, not JWT name!) "	| keyBytes hash |	keyBytes := secretKey isCharacters 			ifTrue: [ self class decodeBase64AsBytes: secretKey ]			ifFalse: [ secretKey ].	keyBytes size &lt; 32 		ifTrue: [ TokenError raiseSignal: 'Invalid key size, minimum size is 256 bits' ].	hash := Crypto.Hash algorithm: vwHashName key: keyBytes.	hash updateFrom: ( self class encodeAsBytes: toSign ).	^ hash finish</body>
 
 <body package="JSONWebTokens">verifyClaims: expectedClaims 	" Raises an error if the claims cannot be verified. "	| now |	now := Timestamp nowUTC .	self expiry ifNotNil: 		[: expiry |			expiry &lt;= now				ifTrue: [ TokenError raiseSignal: 'Token is expired (expiry date: ', expiry displayString, ' UTC)' ]		].	self notBefore ifNotNil: 		[: notBefore |			notBefore &gt; now				ifTrue: [ TokenError raiseSignal: 'Token may not be used yet (not before date: ', notBefore displayString, ' UTC)' ]		].	expectedClaims notNil 		ifTrue: 		[	expectedClaims keysAndValuesDo: 				[: claimName : expectedValue | | actualValue |					actualValue := self payloadAt: claimName ifAbsent: [ nil ].					actualValue = expectedValue 						ifFalse: 						[	TokenError raiseSignal: ( 'Token mismatch for claim "&lt;1s&gt;"' expandMacrosWith: claimName )						]				]		].</body>
 
@@ -188,31 +254,21 @@ Date: 6:15:04 PM May 31, 2019
 </methods>
 
 <methods>
-<class-id>JWT.Token</class-id> <category>accessing</category>
+<class-id>JWT.Token</class-id> <category>api</category>
 
-<body package="JSONWebTokens">header	^ header</body>
+<body package="JSONWebTokens">renewExpiry: renewDuration 	" Update the expiry. Modifies the payload, so the token must be signed again afterwards.	Does not update if the current expiry is later than the renew expiry.	Returns true if the expiry was updated "	| newExpiry expiry |	newExpiry := Timestamp nowUTC + renewDuration.	expiry := self expiry.	( expiry notNil and: [ expiry &gt; newExpiry ]) 		ifTrue: [ ^ false ].	self payloadAt: self class keyExpiry put: newExpiry jwtValue.	^ true</body>
 
-<body package="JSONWebTokens">header: aStringOrObject 	header := aStringOrObject isCharacters 			ifTrue: [ aStringOrObject ]			ifFalse: 			[					[ JSON.Json render: aStringOrObject ] 					on: JSON.JsonSyntaxError					do: [: ex | TokenError raiseSignal: 'Header cannot be represented as JSON' ]			].	headerObject := nil.</body>
+<body package="JSONWebTokens">signWithKey: key 	" Uses the mandatory HMAC SHA-256 algorithm "	^ self signWithKey: key algorithm: self defaultAlgorithm</body>
 
-<body package="JSONWebTokens">headerAt: aKey ifAbsent: ifAbsentBlock	^ self headerObject at: aKey asString ifAbsent: ifAbsentBlock</body>
+<body package="JSONWebTokens">signWithKey: key algorithm: algorithmName 	" Returns the encoded, signed token.	Key can either be a byte array or a base64url encoded string. "	| toSign newSignature |	self headerAt: self class keyAlgorithm put: algorithmName.	self headerAt: self class keyType put: self class tokenType.	toSign := self messageToSign.	newSignature := self sign: toSign key: key algorithm: algorithmName.	self signature: newSignature.	^ toSign , '.' , ( self class encodeBase64Bytes: newSignature )</body>
 
-<body package="JSONWebTokens">headerAt: aKey put: aValue	| modifiedObject |	modifiedObject := self headerObject copy.	modifiedObject at: aKey asString put: aValue.	self header: modifiedObject</body>
+<body package="JSONWebTokens">verifyWithKey: key 	" Uses the mandatory HMAC SHA-256 algorithm "	self verifyWithKey: key algorithm: self defaultAlgorithm</body>
 
-<body package="JSONWebTokens">headerObject	^ headerObject ifNil: 		[	headerObject := self cacheObjectFromJson: self header		]</body>
+<body package="JSONWebTokens">verifyWithKey: key algorithm: algorithmName 	self verifyWithKey: key algorithm: algorithmName claims: nil</body>
 
-<body package="JSONWebTokens">payload	^ payload</body>
+<body package="JSONWebTokens">verifyWithKey: key algorithm: algorithmName claims: expectedClaims 	" Raises an error if the token cannot be verified.		The algorithm has to be supplied, see 		https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries "	| pragma |	pragma := ( Pragma allNamed: #verify: in: self class ) 			detect: [: p | ( p argumentAt: 1 ) = algorithmName ]			ifNone: [ TokenError raiseSignal: ( 'Unsupported algorithm: &lt;1s&gt;' expandMacrosWith: algorithmName )].	self perform: pragma selector with: key.	self verifyClaims: expectedClaims.</body>
 
-<body package="JSONWebTokens">payload: aStringOrObject 	payload := aStringOrObject isCharacters 			ifTrue: [ aStringOrObject ]			ifFalse: 			[					[ JSON.Json render: aStringOrObject ] 					on: JSON.JsonSyntaxError					do: [: ex | TokenError raiseSignal: 'Payload cannot be represented as JSON' ]			].	payloadObject := nil.</body>
-
-<body package="JSONWebTokens">payloadAt: aKey ifAbsent: ifAbsentBlock	^ self payloadObject at: aKey asString ifAbsent: ifAbsentBlock</body>
-
-<body package="JSONWebTokens">payloadAt: aKey put: aValue	| modifiedObject |	modifiedObject := self payloadObject copy.	modifiedObject at: aKey asString put: aValue.	self payload: modifiedObject</body>
-
-<body package="JSONWebTokens">payloadObject	^ payloadObject ifNil: 		[	payloadObject := self cacheObjectFromJson: self payload		]</body>
-
-<body package="JSONWebTokens">signature	^ signature</body>
-
-<body package="JSONWebTokens">signature: aSignature 	signature := aSignature.</body>
+<body package="JSONWebTokens">verifyWithKey: key claims: expectedClaims 	" Uses the mandatory HMAC SHA-256 algorithm "	self verifyWithKey: key algorithm: self defaultAlgorithm claims: expectedClaims</body>
 </methods>
 
 <methods>
@@ -242,24 +298,6 @@ Date: 6:15:04 PM May 31, 2019
 </methods>
 
 <methods>
-<class-id>JWT.Token</class-id> <category>api</category>
-
-<body package="JSONWebTokens">renewExpiry: renewDuration 	" Update the expiry. Modifies the payload, so the token must be signed again afterwards.	Does not update if the current expiry is later than the renew expiry.	Returns true if the expiry was updated "	| newExpiry expiry |	newExpiry := Timestamp nowUTC + renewDuration.	expiry := self expiry.	( expiry notNil and: [ expiry &gt; newExpiry ]) 		ifTrue: [ ^ false ].	self payloadAt: self class keyExpiry put: newExpiry jwtValue.	^ true</body>
-
-<body package="JSONWebTokens">signWithKey: key 	" Uses the mandatory HMAC SHA-256 algorithm "	^ self signWithKey: key algorithm: self defaultAlgorithm</body>
-
-<body package="JSONWebTokens">signWithKey: key algorithm: algorithmName 	" Returns the encoded, signed token.	Key can either be a byte array or a base64url encoded string. "	| toSign newSignature |	self headerAt: self class keyAlgorithm put: algorithmName.	self headerAt: self class keyType put: self class tokenType.	toSign := self messageToSign.	newSignature := self sign: toSign key: key algorithm: algorithmName.	self signature: newSignature.	^ toSign , '.' , ( self class encodeBytes: newSignature )</body>
-
-<body package="JSONWebTokens">verifyWithKey: key 	" Uses the mandatory HMAC SHA-256 algorithm "	self verifyWithKey: key algorithm: self defaultAlgorithm</body>
-
-<body package="JSONWebTokens">verifyWithKey: key algorithm: algorithmName 	self verifyWithKey: key algorithm: algorithmName claims: nil</body>
-
-<body package="JSONWebTokens">verifyWithKey: key algorithm: algorithmName claims: expectedClaims 	" Raises an error if the token cannot be verified.		The algorithm has to be supplied, see 		https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries "	| pragma |	pragma := ( Pragma allNamed: #verify: in: self class ) 			detect: [: p | ( p argumentAt: 1 ) = algorithmName ]			ifNone: [ TokenError raiseSignal: ( 'Unsupported algorithm: &lt;1s&gt;' expandMacrosWith: algorithmName )].	self perform: pragma selector with: key.	self verifyClaims: expectedClaims.</body>
-
-<body package="JSONWebTokens">verifyWithKey: key claims: expectedClaims 	" Uses the mandatory HMAC SHA-256 algorithm "	self verifyWithKey: key algorithm: self defaultAlgorithm claims: expectedClaims</body>
-</methods>
-
-<methods>
 <class-id>JWT.Token</class-id> <category>accessing - header</category>
 
 <body package="JSONWebTokens">algorithm	" Note: Never use this value for verification		https://auth0.com/blog/critical-vulnerabilities-in-json-web-token-libraries "	^ self headerAt: self class keyAlgorithm ifAbsent: [ nil ]</body>
@@ -280,15 +318,15 @@ Date: 6:15:04 PM May 31, 2019
 <methods>
 <class-id>JWT.Token class</class-id> <category>private</category>
 
-<body package="JSONWebTokens">decodeAsBytes: aString	" Decodes a base64url-encoded string.	Returns bytes.	See RFC 7515 ( Base64url Encoding)  "		| replacements base64String stream output byte base64DecodedBytes |	replacements := Dictionary new.	replacements at: $-  put: $+ .	replacements at: $_  put: $/ .	base64String := aString collect: [ : char | replacements at: char ifAbsent: [ char ]].	stream := (base64String asByteArray withEncoding: #base64) readStream.	output := ( ByteArray new: aString size ) writeStream.	[		[ (byte := stream next) notNil ] whileTrue: [ output nextPut: byte ].	] on: Error do: [ TokenError raiseSignal: 'Token base64url decoding failed' ].	output close.	base64DecodedBytes := output contents.	^ base64DecodedBytes</body>
+<body package="JSONWebTokens">decodeBase64AsBytes: aString	" Decodes a base64url-encoded string.	Returns bytes.	See RFC 7515 ( Base64url Encoding)  "		| replacements base64String stream output byte base64DecodedBytes |	replacements := Dictionary new.	replacements at: $-  put: $+ .	replacements at: $_  put: $/ .	base64String := aString collect: [ : char | replacements at: char ifAbsent: [ char ]].	stream := (base64String asByteArray withEncoding: #base64) readStream.	output := ( ByteArray new: aString size ) writeStream.	[		[ (byte := stream next) notNil ] whileTrue: [ output nextPut: byte ].	] on: Error do: [ TokenError raiseSignal: 'Token base64url decoding failed' ].	output close.	base64DecodedBytes := output contents.	^ base64DecodedBytes</body>
 
-<body package="JSONWebTokens">decodeAsString: aString	" Decodes a base64url-utf8-encoded string.	Returns a string.	See RFC 7515 ( Base64url Encoding)  "		^ (self decodeAsBytes: aString) asStringEncoding: #utf8</body>
+<body package="JSONWebTokens">decodeBase64AsString: aString	" Decodes a base64url-utf8-encoded string.	Returns a string.	See RFC 7515 ( Base64url Encoding)  "		^ (self decodeBase64AsBytes: aString) asStringEncoding: #utf8</body>
 
 <body package="JSONWebTokens">encodeAsBytes: aByteString	^ aByteString asByteArrayEncoding: #utf8</body>
 
-<body package="JSONWebTokens">encodeBytes: someBytes 	" Returns a base64url-encoded string.	See RFC 7515 ( Base64url Encoding)  "	| output replacements encoded i |	output := ( ByteArray new withEncoding: #base64 ) writeStream.	someBytes do: [: byte | output nextPut: ( Character value: byte )].	output close.	replacements := Dictionary new.	replacements at: $+ put: $-.	replacements at: $/ put: $_.	encoded := output encodedContents asByteString 			collect: [: byte | replacements at: byte ifAbsent: [ byte ]].	^ ( encoded notEmpty and: [ encoded last = $= ]) 		ifTrue: 		[	i := encoded size - 1.			[( encoded at: i ) = $= ] whileTrue: [ i := i - 1 ].			i &lt; 1 				ifTrue: [ TokenError raiseSignal: 'base64url encoding failed' ].			encoded copyFrom: 1 to: i		]		ifFalse: [ encoded ]</body>
+<body package="JSONWebTokens">encodeBase64Bytes: someBytes 	" Returns a base64url-encoded string.	See RFC 7515 ( Base64url Encoding)  "	| output replacements encoded i |	output := ( ByteArray new withEncoding: #base64 ) writeStream.	someBytes do: [: byte | output nextPut: ( Character value: byte )].	output close.	replacements := Dictionary new.	replacements at: $+ put: $-.	replacements at: $/ put: $_.	encoded := output encodedContents asByteString 			collect: [: byte | replacements at: byte ifAbsent: [ byte ]].	^ ( encoded notEmpty and: [ encoded last = $= ]) 		ifTrue: 		[	i := encoded size - 1.			[( encoded at: i ) = $= ] whileTrue: [ i := i - 1 ].			i &lt; 1 				ifTrue: [ TokenError raiseSignal: 'base64url encoding failed' ].			encoded copyFrom: 1 to: i		]		ifFalse: [ encoded ]</body>
 
-<body package="JSONWebTokens">encodeString: aString 	" Returns a base64url-utf8-encoded string.	See RFC 7515 ( Base64url Encoding)  "	^ self encodeBytes: ( self encodeAsBytes: aString )</body>
+<body package="JSONWebTokens">encodeBase64String: aString 	" Returns a base64url-utf8-encoded string.	See RFC 7515 ( Base64url Encoding)  "	^ self encodeBase64Bytes: ( self encodeAsBytes: aString )</body>
 
 <body package="JSONWebTokens">keyForPublicClaim: claimName	" public claims should use a namespace "	^ 'http://www.i-views.com/jwt/', claimName</body>
 </methods>
@@ -296,7 +334,7 @@ Date: 6:15:04 PM May 31, 2019
 <methods>
 <class-id>JWT.Token class</class-id> <category>instance creation</category>
 
-<body package="JSONWebTokens">fromEncodedToken: base64urlEncodedToken 	| stream header payload signature decodedPayload decodedHeader decodedSignature |	stream := base64urlEncodedToken readStream.	header := stream upTo: $..	stream atEnd 		ifTrue: [ TokenError raiseSignal: 'Invalid token (&lt;header&gt;.&lt;payload&gt;.&lt;signature&gt; expected)' ].	payload := stream upTo: $..	stream atEnd 		ifTrue: [ TokenError raiseSignal: 'Invalid token (&lt;header&gt;.&lt;payload&gt;.&lt;signature&gt; expected)' ].	signature := stream upToEnd.	[	decodedPayload := self decodeAsString: payload.		decodedHeader := self decodeAsString: header.		decodedSignature := self decodeAsBytes: signature	] on: Error do: [: ex | TokenError raiseSignal: 'Invalid token (base64url decoding failed)' ].	^ self new		payload: decodedPayload;		header: decodedHeader;		signature: decodedSignature;		yourself</body>
+<body package="JSONWebTokens">fromEncodedToken: base64urlEncodedToken 	| stream header payload signature decodedPayload decodedHeader decodedSignature |	stream := base64urlEncodedToken readStream.	header := stream upTo: $..	stream atEnd 		ifTrue: [ TokenError raiseSignal: 'Invalid token (&lt;header&gt;.&lt;payload&gt;.&lt;signature&gt; expected)' ].	payload := stream upTo: $..	stream atEnd 		ifTrue: [ TokenError raiseSignal: 'Invalid token (&lt;header&gt;.&lt;payload&gt;.&lt;signature&gt; expected)' ].	signature := stream upToEnd.	[	decodedPayload := self decodeBase64AsString: payload.		decodedHeader := self decodeBase64AsString: header.		decodedSignature := self decodeBase64AsBytes: signature	] on: Error do: [: ex | TokenError raiseSignal: 'Invalid token (base64url decoding failed)' ].	^ self new		payload: decodedPayload;		header: decodedHeader;		signature: decodedSignature;		yourself</body>
 
 <body package="JSONWebTokens">payload: aStringOrObject	^ self new payload: aStringOrObject; yourself</body>
 </methods>
@@ -330,15 +368,35 @@ Date: 6:15:04 PM May 31, 2019
 </methods>
 
 <methods>
-<class-id>Security.X509.X509Object</class-id> <category>accessing</category>
+<class-id>JWT.JWTJsonReadStream</class-id> <category>private-parsing</category>
 
-<body package="JSONWebTokens">jwtVerify: sig of: digestBytes hash: hashID padding: paddingID	JWT.TokenError raiseSignal: 'Key must be a certificate'</body>
+<body package="JSONWebTokens">parseObject	" We want strings as keys, not symbols "	| object |	self next = ${ ifFalse: [ self error: 'Failed parsing object' ].	object := Dictionary new.	self skipWhitespace.	[	self peekNext = $}	] whileFalse: [ | key value |		key := self parseString.		(self skipWhitespace; next) = $: ifFalse: [ self error: 'Failed parsing object' ].		value := self skipWhitespace; get.		object at: key asString put: value.		(self skipWhitespace; peekNext) = $, ifTrue: [			self next; skipWhitespace] ].	self next.	^object</body>
 </methods>
 
 <methods>
 <class-id>Core.Timestamp class</class-id> <category>instance creation</category>
 
 <body package="JSONWebTokens">fromJwtValue: timestampValue 	" See RFC 7519 "	timestampValue isInteger 		ifFalse: 		[	JWT.TokenError raiseSignal: 'Invalid JWT timestamp value: ' , timestampValue displayString		].	^ self fromSeconds: timestampValue + self jwtOffset</body>
+</methods>
+
+<methods>
+<class-id>Core.Timestamp class</class-id> <category>converting</category>
+
+<body package="JSONWebTokens">jwtOffset	" See RFC 7519  "	^ 2177452800</body>
+</methods>
+
+<methods>
+<class-id>Core.Timestamp</class-id> <category>conversion</category>
+
+<body package="JSONWebTokens">jwtValue	" See RFC 7519 	Assume that this is a UTC timestamp, so do not convert local time "		 ^ self asSeconds - self class jwtOffset</body>
+</methods>
+
+<methods>
+<class-id>Security.X509.X509Object</class-id> <category>accessing</category>
+
+<body package="JSONWebTokens">jwtSign: toSign hash: hashID padding: paddingName 	JWT.TokenError raiseSignal: 'Key must be a private key'</body>
+
+<body package="JSONWebTokens">jwtVerify: sig of: digestBytes hash: hashID padding: paddingID	JWT.TokenError raiseSignal: 'Key must be a certificate'</body>
 </methods>
 
 <methods>
@@ -351,24 +409,6 @@ Date: 6:15:04 PM May 31, 2019
 <class-id>Security.X509.Certificate</class-id> <category>accessing</category>
 
 <body package="JSONWebTokens">jwtVerify: sig of: digestBytes hash: hashID padding: paddingID	^ self publicKey getKey verify: sig of: digestBytes hash: hashID asUppercase padding: paddingID asUppercase</body>
-</methods>
-
-<methods>
-<class-id>Core.Timestamp class</class-id> <category>converting</category>
-
-<body package="JSONWebTokens">jwtOffset	" See RFC 7519  "	^ 2177452800</body>
-</methods>
-
-<methods>
-<class-id>Security.X509.X509Object</class-id> <category>accessing</category>
-
-<body package="JSONWebTokens">jwtSign: toSign hash: hashID padding: paddingName 	JWT.TokenError raiseSignal: 'Key must be a private key'</body>
-</methods>
-
-<methods>
-<class-id>Core.Timestamp</class-id> <category>conversion</category>
-
-<body package="JSONWebTokens">jwtValue	" See RFC 7519 	Assume that this is a UTC timestamp, so do not convert local time "		 ^ self asSeconds - self class jwtOffset</body>
 </methods>
 
 <do-it>"Imported Classes:"</do-it>
@@ -391,6 +431,21 @@ Date: 6:15:04 PM May 31, 2019
 </class>
 
 <class>
+<name>Timestamp</name>
+<environment>Core</environment>
+<super>Core.Magnitude</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars>year month day hours minutes seconds milliseconds partialNanosecond </inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category>Magnitude-General</category>
+<attributes>
+<package>Magnitude-General</package>
+</attributes>
+</class>
+
+<class>
 <name>X509Object</name>
 <environment>Security.X509</environment>
 <super>Core.Object</super>
@@ -399,6 +454,53 @@ Date: 6:15:04 PM May 31, 2019
 <inst-vars></inst-vars>
 <class-inst-vars></class-inst-vars>
 <imports></imports>
+<category>Security-Certificates</category>
+<attributes>
+<package>X509</package>
+</attributes>
+</class>
+
+<class>
+<name>JSON</name>
+<environment>Xtreams</environment>
+<super>Core.Object</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars></inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category></category>
+<attributes>
+<package>Xtreams-Transforms</package>
+</attributes>
+</class>
+
+<class>
+<name>X509RSAPrivateKey</name>
+<environment>Security.X509</environment>
+<super>Security.X509.X509PrivateKey</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars>version d n e p q exponent1 exponent2 coefficient </inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports></imports>
+<category>Security-Certificates</category>
+<attributes>
+<package>X509</package>
+</attributes>
+</class>
+
+<class>
+<name>Certificate</name>
+<environment>Security.X509</environment>
+<super>Security.X509.X509Object</super>
+<private>false</private>
+<indexed-type>none</indexed-type>
+<inst-vars>encoding tbsCertificate signatureAlgorithm signatureValue signature </inst-vars>
+<class-inst-vars></class-inst-vars>
+<imports>
+			private Protocols.*
+			</imports>
 <category>Security-Certificates</category>
 <attributes>
 <package>X509</package>
@@ -421,17 +523,17 @@ Date: 6:15:04 PM May 31, 2019
 </class>
 
 <class>
-<name>X509RSAPrivateKey</name>
-<environment>Security.X509</environment>
-<super>Security.X509.X509PrivateKey</super>
-<private>false</private>
+<name>JSONReadStream</name>
+<environment>Xtreams</environment>
+<super>Xtreams.ReadStream</super>
+<private>true</private>
 <indexed-type>none</indexed-type>
-<inst-vars>version d n e p q exponent1 exponent2 coefficient </inst-vars>
+<inst-vars>next </inst-vars>
 <class-inst-vars></class-inst-vars>
 <imports></imports>
-<category>Security-Certificates</category>
+<category></category>
 <attributes>
-<package>X509</package>
+<package>Xtreams-Transforms</package>
 </attributes>
 </class>
 
@@ -447,38 +549,6 @@ Date: 6:15:04 PM May 31, 2019
 <category>Net-HTTP-Support</category>
 <attributes>
 <package>HTTP</package>
-</attributes>
-</class>
-
-<class>
-<name>Certificate</name>
-<environment>Security.X509</environment>
-<super>Security.X509.X509Object</super>
-<private>false</private>
-<indexed-type>none</indexed-type>
-<inst-vars>encoding tbsCertificate signatureAlgorithm signatureValue signature </inst-vars>
-<class-inst-vars></class-inst-vars>
-<imports>
-			private Protocols.*
-			</imports>
-<category>Security-Certificates</category>
-<attributes>
-<package>X509</package>
-</attributes>
-</class>
-
-<class>
-<name>Timestamp</name>
-<environment>Core</environment>
-<super>Core.Magnitude</super>
-<private>false</private>
-<indexed-type>none</indexed-type>
-<inst-vars>year month day hours minutes seconds milliseconds partialNanosecond </inst-vars>
-<class-inst-vars></class-inst-vars>
-<imports></imports>
-<category>Magnitude-General</category>
-<attributes>
-<package>Magnitude-General</package>
 </attributes>
 </class>
 
