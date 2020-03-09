@@ -24,5 +24,5 @@ token verifyHS256: key
 ```
 
 ## Debugging
-When using the debugger at https://jwt.io keep in mind that the line indentation of the header and payload matter
+When using the debugger at https://jwt.io keep in mind that the whitespaces of the header and payload matter
 
